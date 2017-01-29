@@ -25,6 +25,7 @@ public:
     QVector<TodoEntry> todoEntries;
     QVector<TodoFile> todoFiles;
     void addEntryFile(TodoFile&);
+    void refreshListColors();
     uint32_t newEntryID = 16000;
     TodoEntry* currentEntry = nullptr;
     QGraphicsColorizeEffect buttonEffect;

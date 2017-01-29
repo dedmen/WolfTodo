@@ -2,7 +2,7 @@
 #define TODOENTRY_H
 #include <stdint.h>
 #include <QDateTime>
-
+#include <QTreeWidgetItem>
 class TodoEntry
 {
 public:
@@ -16,6 +16,7 @@ public:
     QString state;
     QString category;
     bool newEntry = false;
+    QTreeWidgetItem* item = nullptr;
 };
 
 class TodoFile

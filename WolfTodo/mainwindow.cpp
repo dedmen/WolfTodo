@@ -32,6 +32,12 @@ MainWindow::MainWindow(QWidget *parent) :
 
     refreshList();
     ui->entrySave->setGraphicsEffect(&buttonEffect);
+
+    ui->treeList->header()->setStretchLastSection(false);
+    ui->treeList->header()->setSectionResizeMode(0, QHeaderView::Stretch);
+
+
+
 }
 
 MainWindow::~MainWindow()
@@ -80,6 +86,7 @@ void MainWindow::refreshList()
         item->setText(1,it.author);
         item->setText(2,it.state);
         item->setData(0,Qt::UserRole,it.id);
+        it.item = item;
         (*categoryItems.find(it.category))->addChild(item);
     }
     ui->treeList->resizeColumnToContents(0);
@@ -89,6 +96,7 @@ void MainWindow::refreshList()
 
     ui->entryFiles->clearContents();
     ui->entryFiles->setRowCount(0);
+    refreshListColors();
 }
 
 void MainWindow::addEntryFile(TodoFile & it)
@@ -115,11 +123,32 @@ void MainWindow::addEntryFile(TodoFile & it)
                                                          "Datei auswählen",
                                                          config.ConfigGetConfigValue("InputDirectory").isValid() ? config.ConfigGetConfigValue("InputDirectory").toString() : QString()
                                                                                                                    /*,
-                                                                                                                                                               it.filename,0,
-                                                                                                                                                               QFileDialog::DontResolveSymlinks*/);
+                                                                                                                                                                                                                                                                                                                                                                                     it.filename,0,
+                                                                                                                                                                                                                                                                                                                                                                                     QFileDialog::DontResolveSymlinks*/);
         uploader.getFile(it.url,file+"/"+it.filename);
 
     });
+}
+
+void MainWindow::refreshListColors()
+{
+
+    for (int var = 0; var <  ui->treeList->topLevelItemCount(); ++var) {
+        auto TLitem = ui->treeList->topLevelItem(var);
+
+        bool categoryDone = true;
+
+
+        for (int subVar = 0; subVar <  TLitem->childCount(); ++subVar) {
+            auto item = TLitem->child(subVar);
+            bool isDone = item->text(2) == "DONE";
+            if (!isDone) categoryDone = false;
+            item->setBackgroundColor(2,isDone ? QColor(0,255,0) : QColor(255,0,0));
+        };
+
+        TLitem->setBackgroundColor(2,categoryDone ? QColor(0,255,0) : QColor(255,0,0));
+    }
+
 }
 
 void MainWindow::on_treeList_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *)
@@ -204,11 +233,17 @@ void MainWindow::on_entrySave_clicked()
         if (mysql.addEntry(*currentEntry)){
             buttonEffect.setColor(QColor::fromRgb(0,250,0,255));
             currentEntry->newEntry = false;
+            currentEntry->item->setText(0,currentEntry->title);
+            currentEntry->item->setData(0,Qt::UserRole,currentEntry->id);
         }
     } else {
-        if (mysql.updateEntry(*currentEntry))
+        if (mysql.updateEntry(*currentEntry)){
             buttonEffect.setColor(QColor::fromRgb(0,250,0,255));
+            currentEntry->item->setText(0,currentEntry->title);
+        }
+
     }
+    refreshListColors();
 }
 
 void MainWindow::on_entryDescription_textChanged()
@@ -239,6 +274,7 @@ void MainWindow::on_buttonNewEntry_clicked()
     newEntry.added = QDateTime::currentDateTime();
     newEntry.newEntry = true;
     newEntry.category = ui->comboNewEntryCategory->currentText();
+    newEntry.state = "TODO";
     newEntry.id = newEntryID++;
     bool inserted=false;
     for (int var = 0; var <  ui->treeList->topLevelItemCount(); ++var) {
@@ -251,6 +287,7 @@ void MainWindow::on_buttonNewEntry_clicked()
             item->setText(1,newEntry.author);
             item->setText(2,newEntry.state);
             item->setData(0,Qt::UserRole,newEntry.id);
+            newEntry.item = item;
             TLitem->addChild(item);
             inserted = true;
             break;
@@ -263,7 +300,7 @@ void MainWindow::on_buttonNewEntry_clicked()
         item->setText(1,newEntry.author);
         item->setText(2,newEntry.state);
         item->setData(0,Qt::UserRole,newEntry.id);
-
+        newEntry.item = item;
         auto TLItem = new QTreeWidgetItem();
         TLItem->setText(0,newEntry.category);
         TLItem->addChild(item);
@@ -275,7 +312,6 @@ void MainWindow::on_buttonNewEntry_clicked()
 
 void MainWindow::on_treeList_expanded(const QModelIndex &)
 {
-    ui->treeList->resizeColumnToContents(0);
     ui->treeList->resizeColumnToContents(1);
 }
 
